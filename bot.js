@@ -24,36 +24,41 @@ async function sendMessage(chatId, text) {
 async function handleUserInput(chatId, text) {
   let session = userSessions[chatId] || { step: 0, numbers: [] };
 
-  // Step 1: Ask for the first number
-  if (session.step === 0) {
+  // If the user sends the /start command at any point, reset the session
+  if (text === '/start') {
+    session = { step: 0, numbers: [] };  // Clear any existing session state
+    await sendMessage(chatId, 'Welcome! I will help you randomly select a number from three inputs.');
     await sendMessage(chatId, 'Please enter the first number.');
-    session.step = 1;
+    session.step = 1;  // Move to the first input step
+    userSessions[chatId] = session;  // Save the session state
+    return;
   }
-  // Step 2: Ask for the second number after receiving the first
-  else if (session.step === 1) {
+
+  // Step 1: Ask for the first number
+  if (session.step === 1) {
     if (isNaN(text)) {
       await sendMessage(chatId, 'Invalid input. Please enter a valid number.');
-      return; // Don't increment step; ask again for the second number
+      return; // Don't increment step; ask again for the first number
     }
     session.numbers.push(Number(text));
     await sendMessage(chatId, 'Please enter the second number.');
     session.step = 2;
   }
-  // Step 3: Ask for the third number after receiving the second
+  // Step 2: Ask for the second number after receiving the first
   else if (session.step === 2) {
     if (isNaN(text)) {
       await sendMessage(chatId, 'Invalid input. Please enter a valid number.');
-      return; // Don't increment step; ask again for the third number
+      return; // Don't increment step; ask again for the second number
     }
     session.numbers.push(Number(text));
     await sendMessage(chatId, 'Please enter the third number.');
     session.step = 3;
   }
-  // Step 4: Once all numbers are collected, randomly select one
+  // Step 3: Ask for the third number after receiving the second
   else if (session.step === 3) {
     if (isNaN(text)) {
       await sendMessage(chatId, 'Invalid input. Please enter a valid number.');
-      return; // Don't proceed until a valid number is entered
+      return; // Don't increment step; ask again for the third number
     }
     session.numbers.push(Number(text));
 
@@ -69,7 +74,7 @@ async function handleUserInput(chatId, text) {
     // Move to the confirmation step
     session.step = 4;
   }
-  // Step 5: Handle the user's decision (yes or no)
+  // Step 4: Handle the user's decision (yes or no)
   else if (session.step === 4) {
     if (text.toLowerCase() === 'yes') {
       // Immediately start over and prompt for the first number again
@@ -82,7 +87,7 @@ async function handleUserInput(chatId, text) {
       delete userSessions[chatId];  // Clear session data
     } else {
       // If input is not "yes" or "no", ask again
-      await sendMessage(chatId, 'Invalid response. Please type "yes" or "no".');
+      await sendMessage(chatId, 'Invalid response. Please type "yes" or "/start" to restart, "no" to terminate.');
     }
   }
 
@@ -103,14 +108,8 @@ async function getUpdates(offset) {
         const chatId = update.message.chat.id;
         const text = update.message.text;
 
-        // Handle /start command to initiate the process
-        if (text === '/start') {
-          await sendMessage(chatId, 'Welcome! I will help you randomly select a number from three inputs.');
-          await handleUserInput(chatId, text); // Start the number input sequence
-        } else {
-          // Process user input for numbers
-          await handleUserInput(chatId, text);
-        }
+        // Handle all incoming messages through handleUserInput
+        await handleUserInput(chatId, text);
 
         // Update the offset to avoid processing the same update again
         offset = update.update_id + 1;
