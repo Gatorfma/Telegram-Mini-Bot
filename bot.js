@@ -83,11 +83,11 @@ async function handleUserInput(chatId, text) {
         await sendMessage(chatId, 'Starting over! Please enter the first number.');
       } else if (text.toLowerCase() === 'no') {
         // End the session and wait for /start to restart
-        await sendMessage(chatId, 'Okay! If you want to play again, type /start.');
+        await sendMessage(chatId, 'Okay! If you want to play again, type /start or "yes".');
         delete userSessions[chatId];  // Clear session data
       } else {
         // If input is not "yes" or "no", ask again
-        await sendMessage(chatId, 'Invalid response. Please type "yes" or "no".');
+        await sendMessage(chatId, 'Invalid response. Please type "yes" or /start to restart, "no" to terminate.');
       }
     }
   
