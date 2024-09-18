@@ -1,51 +1,8 @@
 import fetch from 'node-fetch';
-import express from 'express';
 
-
-
-const app = express();
-//Bot's API URL
-const TELEGRAM_API_URL = `https://furkanapp.herokuapp.com/webhook`;
-
-// Middleware to parse JSON requests
-app.use(express.json());
-
-// Handle Telegram webhook requests
-app.post('/webhook', async (req, res) => {
-    const { message } = req.body;
-
-    if (message && message.text) {
-        const chatId = message.chat.id;
-        const text = message.text;
-
-        if (text === '/start') {
-            await sendMessage(chatId, 'Welcome! Let\'s start.');
-        } else {
-            await sendMessage(chatId, `You said: ${text}`);
-        }
-    }
-
-    res.sendStatus(200);  // Respond to Telegram to acknowledge the message
-});
-
-// Function to send a message to the user
-async function sendMessage(chatId, text) {
-    const url = `${TELEGRAM_API_URL}/sendMessage`;
-    await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            chat_id: chatId,
-            text: text,
-        }),
-    });
-}
-
-// Start the Express server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+//Bot's API token from BotFather
+const BOT_TOKEN = '7091749954:AAG0EzWnR2ytafrPupunTWtvnUJ8bHEj03Q';
+const TELEGRAM_API_URL = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 // To store user session data (temporary storage for numbers)
 let userSessions = {};
@@ -126,11 +83,11 @@ async function handleUserInput(chatId, text) {
       await sendMessage(chatId, 'Starting over! Please enter the first number.');
     } else if (text.toLowerCase() === 'no') {
       // End the session and wait for /start to restart
-      await sendMessage(chatId, 'Okay! If you want to play again, type /start.');
+      await sendMessage(chatId, 'Okay! If you want to play again, type /start or yes.');
       delete userSessions[chatId];  // Clear session data
     } else {
       // If input is not "yes" or "no", ask again
-      await sendMessage(chatId, 'Invalid response. Please type "yes" or "/start" to restart, "no" to terminate');
+      await sendMessage(chatId, 'Invalid response. Please type "yes" or /start to restart, "no" to terminate.');
     }
   }
 
@@ -172,23 +129,6 @@ async function main() {
     await new Promise((resolve) => setTimeout(resolve, 1000)); // Poll every 1 second
   }
 }
-
-// Function to set the webhook URL
-const axios = require('axios');
-const setWebhook = async () => {
-    const botToken = '7538685257:AAG5Ss27UuzxK81TWyF3MSgnMtXNas3A2fA';
-    const herokuAppUrl = 'https://furkanapp.herokuapp.com/webhook';
-    const telegramUrl = `https://api.telegram.org/bot${botToken}/setWebhook`;
-  
-    try {
-      const response = await axios.post(telegramUrl, { url: herokuAppUrl });
-      console.log('Webhook set successfully:', response.data);
-    } catch (error) {
-      console.error('Error setting webhook:', error.response.data);
-    }
-  };
-  
-  setWebhook();
 
 // Start the bot
 main().catch((err) => console.error('Error:', err));
